@@ -4,14 +4,23 @@ reduced to urgend commands
 
 INSTALL:
 - download
-- mv cr /usr/local/bin/
-- chmod +x /usr/local/bin/cr
+- `mv cr /usr/local/bin/`
+- `chmod +x /usr/local/bin/cr`
 ...ready to use
-  "cr"
+  "`cr`"
+
+YOU NEED:
+- installed rigctld/rigctl (from repo)
+- started rigctld with tcp function
+  - in fish alias (functions):
+    - `alias startrig590g 'rigctld -m 2037 -r /dev/ttyUSB0 -s 115200 -vvv' `
+    - `alias startrig590s 'rigctld -m 2031 -r /dev/ttyUSB0 -s 115200 -vvv'`
+
 
 looks like:
+```
 
-crig - Helferlein für rigctl/hamlibmögliche Kommandos:
+ crig - Helferlein für rigctl/hamlibmögliche Kommandos:
  s - Statusabfrage
  c - COMP - Kompressor ein/aus
  t - Tuner - Tuner ein/aus
@@ -29,7 +38,10 @@ crig - Helferlein für rigctl/hamlibmögliche Kommandos:
  - - MEM - Memory down
  
  === Eingabe 
-:  
+:
+
+```
+
 
 
 - internationalisation (english) is at work
