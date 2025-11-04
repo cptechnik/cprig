@@ -23,17 +23,19 @@ s  - Statusabfrage\r\n
 c  - COMP - Kompressor ein/aus\n\r
 t  - Tuner - Tuner ein/aus\n\r
 'T  - TUNE - tuning\n\r
-p  - Power - Power high/low\n\r
+p  - Power - Power 5W/100W\n\r
+'P  - Power - prozentuale eingabe 5-99W\n\r
 w  - Squelch - open/close(9/10) \n\r
 v  - AF LEVEL - 0.05/0.2\n\r
 'V -  AF - Prozent AF Lautstärke\n\r
 a  - ANT 1/2\n\r
+0  - VFOA/VFOB\n\r
 1  - MEM - Memory 1\n\r
 2  - MEM - Memory 2\n\r
 3  - MEM - Memory 3\n\r
 4  - MEM - Memory 4\n\r
-+  - MEM - Memory up \n\r
--  - MEM - Memory down\n\r
++  - MEM - Multi/Memory up \n\r
+-  - MEM - Multi/Memory down\n\r
 
 \n\r
  === Eingabe \n\r"
@@ -48,18 +50,20 @@ language["menu"]="possible input:\r\n
 s  - status\r\n
 c  - COMP - on/off\n\r
 t  - TUNER - on/off\n\r
- T -  TUNE - tuner on and tuning \n\r
-p  - RFPOWER - 10W/100W\n\r
-s  - SQL - off(0)/on(0.9)\n\r
+'T -  TUNE - tuner on and tuning \n\r
+p  - RFPOWER - 5W/100W\n\r
+'P  - Power - input in percent 5-99W\n\r
+w  - SQL - off(0)/on(0.9)\n\r
 v  - AF switch - 0.05/0.2\n\r
- V -  AF enter percente\n\r
+'V -  AF enter in percent\n\r
 a  - ANT 1/2\n\r
+0  - VFOA/VFOB\n\r
 1  - MEM - Memory 1\n\r
 2  - MEM - Memory 2\n\r
 3  - MEM - Memory 3\n\r
 4  - MEM - Memory 4\n\r
-+  - MEM - Memory up \n\r
--  - MEM - Memory down\n\r
++  - MEM - Multi/Memory up \n\r
+-  - MEM - Multi/Memory down\n\r
 \r
  === Eingabe \n\r"
 
@@ -122,16 +126,8 @@ if [ $stattuner == "1" ];then echo $stattuner - on ;fi
       rigctl -m2 l SQL
       echo -n -e "\033[0m AF LEVEL - 0.05/0.2 :  \033[0;33m"
       rigctl -m2 l AF
-#      echo -n -e "\033[0m ANT 1/2 :  \033[0;31m"
-#      rigctl -m2 y 1
-#      echo -n -e "\033[0m ANT 1/2 :  \033[0;31m"
-#      rigctl -m2 y 1 1
-#      echo -n -e "\033[0m ANT 1/2 :  \033[0;31m"
-#      rigctl -m2 y 2 2
-#      echo -n -e "\033[0m ANT 1/2 :  \033[0;31m"
-#      rigctl -m2 y 3 3
-#      echo -n -e "\033[0m ANT 1/2 :  \033[0;31m"
-#      rigctl -m2 y 4 4
+      antstatus=$(rigctl -m2 w "AN;"|tr -d '\0')
+      echo -n -e "\033[0m antenna full status:" $antstatus "antenna: "${antstatus:2:1}
 
       echo -e "\033[0;31m"
       echo -e "\033[0m"
@@ -182,7 +178,7 @@ if [ $stattuner == "1" ];then echo $stattuner - on ;fi
       echo "RFPOWER status:" $status
       echo now switching
       if (( $(echo "$status < 1" | bc -l) ));   then rigctl -m2 L RFPOWER 1; fi
-      if (( $(echo "$status > 0.1" | bc -l) )); then rigctl -m2 L RFPOWER 0.1; fi
+      if (( $(echo "$status > 0.05" | bc -l) )); then rigctl -m2 L RFPOWER 0.1; fi
       status=$(rigctl -m2 l RFPOWER)
       echo "RFPOWER status :" $status
       sleep 1
@@ -193,14 +189,33 @@ if [ $stattuner == "1" ];then echo $stattuner - on ;fi
       echo -e "\r\r  "${language[yourinput]}": w - Squelch\r\r"
       status=$(rigctl -m2 l SQL)
       echo $thiscase" old status:" $status
-      if (( $(echo "$status < 1" | bc -l) ));   then rigctl -m2 L SQL 0.9; fi
+      if (( $(echo "$status < 1" | bc -l) ));   then rigctl -m2 L SQL 1; fi
       if (( $(echo "$status > 0.1" | bc -l) )); then rigctl -m2 L SQL 0; fi
       echo now switching
-#      rigctl -m2 L SQL "$(( ! status ))"
       status=$(rigctl -m2 l SQL)
       echo $tc" new status :" $status
-      echo Taste drücken
-      read -n1
+    ;;
+    W)
+      thiscase=SQL
+      tc=SQL
+      echo -e "\r\r  "${language[yourinput]}": w - Squelch\r\r"
+      status=$(rigctl -m2 l SQL)
+      echo $thiscase" old status:" $status
+      echo "Enter the percent of your SQL Level"
+      read -n2 -p "(only 2char)" sqllev1
+      if [[ "$sqllev1" =~ ^[0-9][0-9]$ ]]; then
+        echo "new SQL size is "$sqllev1
+      status=$(rigctl -m2 L SQL "0."$sqllev1)
+      else
+        echo "only 2char numbers allowed"
+        echo "you entered :  >>" $aflev1"<<"
+      read -n1 -p "press any key"
+      fi
+
+      echo now switching
+      status=$(rigctl -m2 l SQL)
+      echo $tc" new status :" $status
+      sleep 3
       ;;
     v)
       thiscase=AF
@@ -238,34 +253,18 @@ if [ $stattuner == "1" ];then echo $stattuner - on ;fi
       sleep 1
       ;;
     a)
-      thiscase=SQL
-      echo -e "\r\r  "${language[yourinput]}": s - $thiscase - Squelch\r\r"
-      status=$(rigctl -m2 l SQL)
-      echo $thiscase" status:" $status
-      echo now switching
-      if (( $(echo "$status < 0.9" | bc -l) ));   then rigctl -m2 L SQL 0.9; fi
-      if (( $(echo "$status > 0.1" | bc -l) )); then rigctl -m2 L SQL 0; fi
-      status=$(rigctl -m2 L SQL)
-      status=$(rigctl -m2 l SQL)
-      echo $thiscase" status :" $status
-      sleep 1
-      ;;
-    a)
       thiscase=ANT
       echo -e "\r\r  "${language[yourinput]}": s - $thiscase - Squelch\r\r"
-      status=$(rigctl -m2 y 1 1)
-      status=+$(rigctl -m2 y 2 2)
-      status=+$(rigctl -m2 y 3 3)
-      status=+$(rigctl -m2 y 4 4)
-      echo $thiscase" status:" $status
-#      echo now switching
-#      if (( $(echo "$status < 0.9" | bc -l) ));   then rigctl -m2 L SQL 0.9; fi
-#      if (( $(echo "$status > 0.1" | bc -l) )); then rigctl -m2 L SQL 0; fi
-#      status=$(rigctl -m2 L SQL)
-#      status=$(rigctl -m2 l SQL)
-#      echo $thiscase" status :" $status
+      status=$(rigctl -m2 w "AN;"|tr -d '\0')
+      echo $thiscase" status:" $status "antenna: "${status:2:1}
+      echo now switching
+      if [[ ${status:2:1} == 2 ]]; then rigctl -m2 W "AN100;"; fi
+      if [[ ${status:2:1} == 1 ]]; then rigctl -m2 W "AN200;"; fi
+      status=$(rigctl -m2 w "AN;"|tr -d '\0')
+      echo $thiscase" status :" $statuss "antenna: "${status:2:1}
       sleep 1
       ;;
+
     m)
       thiscase=MEM
       echo -e "\r\r  "${language[yourinput]}": m - MEM\r\r"
